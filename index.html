@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SO-101 Recorder</title>
+<style>
+:root{--bg:#0f1115;--panel:#181b22;--line:#2a2f3a;--txt:#e6e8ee;--dim:#8a91a0;--ok:#3ecf8e;--warn:#f5a524;--bad:#ef4444;--acc:#4f8cff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.4 system-ui,sans-serif}
+header{display:flex;gap:12px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+header h1{font-size:16px;margin:0 8px 0 0}
+.pill{padding:3px 10px;border-radius:99px;background:var(--line);font-size:12px}
+.pill.ok{background:#12382a;color:var(--ok)}.pill.warn{background:#3d2d0b;color:var(--warn)}.pill.bad{background:#421616;color:var(--bad)}.pill.rec{background:var(--bad);color:#fff;animation:b 1s infinite}
+@keyframes b{50%{opacity:.55}}
+main{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:12px 16px}
+.side{grid-column:1/-1;display:grid!important;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;align-items:start}
+@media(max-width:1000px){main{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){main{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}
+.cam{align-self:start;padding:0;overflow:hidden;position:relative}
+.cam img{display:block;width:100%;aspect-ratio:4/3;object-fit:contain;background:#000}
+.cam .tag{position:absolute;left:8px;top:8px;background:#000a;padding:2px 8px;border-radius:6px;font-size:12px}
+.cam.rec{outline:3px solid var(--bad)}
+h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);margin:0 0 8px}
+button{background:#262b36;color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:8px 14px;font:inherit;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--acc)}button:disabled{opacity:.4;cursor:not-allowed}
+button.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+button.rec{background:var(--bad);border-color:var(--bad);color:#fff;font-size:18px;padding:14px 22px;font-weight:600}
+button.stop{background:#3b1e22;border-color:var(--bad)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0}
+.grow{flex:1}
+input[type=text],input[type=number]{width:100%;background:#0f1115;color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit}
+label{display:block;color:var(--dim);font-size:12px;margin-top:6px}
+.bar{position:relative;height:8px;background:#0f1115;border-radius:4px;overflow:hidden}
+.bar i{position:absolute;top:0;height:100%;width:3px;background:var(--acc)}.bar i.f{background:var(--ok)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+td,th{padding:3px 4px;text-align:right;font-variant-numeric:tabular-nums}td:first-child,th:first-child{text-align:left}
+th{color:var(--dim);font-weight:500}
+.hot{color:var(--warn)}.msg{font-size:12px;color:var(--dim);min-height:34px}
+.big{font-size:28px;font-variant-numeric:tabular-nums}
+.keys{color:var(--dim);font-size:12px}
+#alerts{max-height:230px;overflow:auto;font-size:12px;font-family:ui-monospace,monospace}
+#alerts div{padding:2px 6px;border-left:3px solid var(--line);margin:2px 0}
+#alerts .warn{border-color:var(--warn);color:var(--warn)}#alerts .crit{border-color:var(--bad);color:#ff8a8a;background:#2a1213}#alerts .info{border-color:var(--acc)}
+.cellcrit{color:var(--bad);font-weight:700}.cellwarn{color:var(--warn)}
+tr.crit td:first-child{color:var(--bad);font-weight:700}tr.warn td:first-child{color:var(--warn)}
+kbd{background:#262b36;border:1px solid var(--line);border-radius:4px;padding:0 5px}
+dialog{background:var(--panel);color:var(--txt);border:1px solid var(--warn);border-radius:12px;max-width:520px}
+dialog::backdrop{background:#000a}
+#toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#421616;color:#fff;padding:10px 16px;border-radius:8px;display:none;max-width:80vw;z-index:9}
+</style>
+</head>
+<body>
+<header>
+  <h1>SO-101 Teleop Recorder</h1>
+  <span id="pState" class="pill">…</span>
+  <span id="pRec" class="pill">idle</span>
+  <span id="pHz" class="pill"></span>
+  <span class="pill" id="pTele"></span>
+  <span class="pill" id="pAlert" style="display:none"></span>
+  <span class="grow"></span>
+  <button id="bLog" style="padding:3px 10px">Show log</button>
+  <span class="keys"><kbd>Space</kbd> record / save &nbsp;<kbd>Backspace</kbd> discard &nbsp;<kbd>Esc</kbd> stop teleop (hold)</span>
+</header>
+<main>
+  <div class="panel cam" id="cam0"><span class="tag" id="t0"></span><img id="i0" alt=""></div>
+  <div class="panel cam" id="cam1"><span class="tag" id="t1"></span><img id="i1" alt=""></div>
+  <div class="panel cam" id="cam2"><span class="tag" id="t2"></span><img id="i2" alt=""></div>
+
+  <div class="side" style="display:grid;gap:12px;align-content:start">
+    <div class="panel">
+      <h2>Recording</h2>
+      <div class="row"><span class="big" id="clock">0.0 s</span><span class="grow"></span><span id="eps" class="big">0</span><span style="color:var(--dim)">episodes</span></div>
+      <div class="row"><button id="bRec" class="rec grow" disabled>● Start recording</button></div>
+      <div class="row"><button id="bDiscard" disabled>Stop &amp; discard</button><span class="grow"></span><span id="frames" class="keys"></span></div>
+      <div class="msg" id="recMsg"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Robot</h2>
+      <div class="row">
+        <button id="bConn" class="primary">Connect</button>
+        <label style="margin:0"><input type="checkbox" id="resume"> follower already holding</label>
+      </div>
+      <div class="row">
+        <button id="bTele" disabled>Start teleop…</button>
+        <button id="bStop" class="stop" disabled>Stop teleop (hold)</button>
+      </div>
+      <div class="row"><button id="bCams">Restart cameras</button></div>
+      <div class="row"><button id="bTorque" disabled>Disable follower torque…</button><button id="bKeep" class="primary" style="display:none"></button></div>
+      <div class="msg" id="engMsg"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Dataset</h2>
+      <label>Task prompt (language instruction for pi0.5)</label>
+      <input type="text" id="task">
+      <label>Dataset folder</label><input type="text" id="dir">
+      <label>Dataset name</label><input type="text" id="name">
+      <div class="row">
+        <div class="grow"><label>FPS</label><input type="number" id="fps" min="5" max="60"></div>
+        <div class="grow"><label>Session s (≤300)</label><input type="number" id="sess" min="10" max="300"></div>
+        <div class="grow"><label>Speed</label><input type="number" id="speed" min="65" max="600"></div>
+      </div>
+      <label>Auto-release torque N s after teleop stops (0 = off; arm goes limp - support it!)</label><input type="number" id="rel" min="0" max="120">
+      <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="append"> append to an existing dataset with this name (default: always start a NEW empty dataset)</label>
+      <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="savepartial"> keep truncated episode if teleop stops on an error (flagged in episode_failures.jsonl)</label>
+      <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="extras"> log extra telemetry (load, current, temp, velocity, raw)</label>
+      <div class="row"><button id="bSave">Apply &amp; open dataset</button></div>
+      <div class="msg" id="dsMsg"></div>
+    </div>
+  </div>
+
+  <div class="panel" style="grid-column:1/-1">
+    <h2>Joints — leader (blue) vs follower (green), degrees / gripper %</h2>
+    <table id="joints"></table>
+  </div>
+  <div class="panel" id="logPanel" style="grid-column:1/-1;display:none">
+    <h2>Error log (logs/so101.log, last 300 lines)</h2>
+    <pre id="logText" style="max-height:300px;overflow:auto;font-size:11px;margin:0;white-space:pre-wrap"></pre>
+  </div>
+  <div class="panel" style="grid-column:1/-1">
+    <h2>Alerts — heat, overload, possible collision, voltage, motor errors</h2>
+    <div id="alerts"><div class="info">no alerts</div></div>
+  </div>
+</main>
+
+<dialog id="dlg">
+  <h3 style="margin-top:0;color:var(--warn)">Start teleoperation?</h3>
+  <p>The follower arm will <b>power on and move</b> to the leader's pose slowly, then follow it.</p>
+  <ul>
+    <li>Base is clamped and the motion path is clear.</li>
+    <li>Gripper is empty; the arm is in a stable supported pose.</li>
+    <li>Hold the leader still until “POSE ALIGNED”.</li>
+    <li>Sessions are limited (<span id="dlgSec"></span> s). Esc stops and holds; it is not a power cut.</li>
+  </ul>
+  <div class="row"><button id="dlgGo" class="primary">I confirm — start</button><button id="dlgNo">Cancel</button></div>
+</dialog>
+<dialog id="dlgT">
+  <h3 style="margin-top:0;color:var(--warn)">Disable follower torque?</h3>
+  <p>The arm will go limp. Support it (and any object) first.</p>
+  <div class="row"><button id="dtGo" class="primary">Arm is supported — disable</button><button id="dtNo">Cancel</button></div>
+</dialog>
+<div id="toast"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+let S=null, editing=false;
+async function api(name,body={}){
+  const r=await fetch('/api/'+name,{method:'POST',body:JSON.stringify(body)}).then(r=>r.json());
+  if(!r.ok) toast(r.error); return r;
+}
+function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',6000)}
+function pill(el,cls,txt){el.className='pill '+cls;el.textContent=txt}
+const num=(v,d=1)=>v==null?'–':Number(v).toFixed(d);
+
+function render(){
+  const s=S, e=s.engine, r=s.recorder;
+  const st=e.state;
+  pill($('pState'),{monitor:'ok',teleop:'warn',error:'bad',disconnected:''}[st]||'',
+       st==='teleop'?(e.aligning?'ALIGNING':'TELEOP'):st.toUpperCase());
+  if(r.recording) pill($('pRec'),'rec','● REC'); else pill($('pRec'),'', 'idle');
+  $('pHz').textContent=e.loop_hz?`loop ${e.loop_hz} Hz`:'';
+  $('pTele').textContent=e.teleop_left!=null?`teleop ${Math.ceil(e.teleop_left)} s left`:'';
+  $('pTele').style.display=e.teleop_left!=null?'':'none';
+  $('engMsg').textContent=e.message||'';
+  $('eps').textContent=r.episodes;
+  $('clock').textContent=(r.elapsed||0).toFixed(1)+' s';
+  $('frames').textContent=r.open?`${r.frames} frames · backlog ${r.backlog} · ${r.disk_free_gb} GB free`:'dataset not opened';
+  const fi=Object.entries(r.frame_issues||{}).map(([k,v])=>`${k}: ${v.duplicate} dup / ${v.skipped} skipped`).join('; ');
+  $('recMsg').textContent=r.error?('⚠ '+r.error):(r.recording&&fi?('camera frames - '+fi):(r.last_saved||''));
+  $('recMsg').style.color=(r.error||/DISCARDED|TRUNCATED/.test(r.last_saved||''))?'var(--bad)':'';
+  const live=st==='teleop'&&!e.aligning;
+  $('bRec').disabled=r.saving||!(live||r.recording);
+  $('bRec').textContent=r.saving?'Saving episode… (encoding video, do not close)':(r.recording?'■ Stop & save episode':'● Start recording');
+  $('bDiscard').disabled=!r.recording||r.saving;
+  $('bConn').textContent=(st==='disconnected'||st==='error')?'Connect':'Disconnect';
+  $('bTele').disabled=st!=='monitor';
+  $('bStop').disabled=st!=='teleop';
+  const kb=$('bKeep'); kb.style.display=e.release_in!=null?'':'none'; kb.textContent=e.release_in!=null?`Torque off in ${Math.ceil(e.release_in)} s - KEEP HOLDING`:'';
+  $('bTorque').disabled=!(st==='monitor'||st==='error')||!e.holding;
+  document.querySelectorAll('.cam').forEach((c,i)=>c.classList.toggle('rec',r.recording));
+  s.cameras.forEach((c,i)=>{
+    const tg=$('t'+i); if(!tg) return;
+    tg.textContent=`${c.name} · ${c.ok?c.fps+' fps':(c.error||'no signal')}`;
+    const img=$('i'+i); const want='/stream/'+c.name+'.mjpg';
+    if(!img.dataset.src){img.dataset.src=want;img.src=want}
+  });
+  if(!editing){
+    const c=s.cfg; if(document.activeElement.tagName!=='INPUT'){
+      $('task').value=c.task;$('dir').value=c.dataset_dir;$('name').value=c.dataset_name;
+      $('fps').value=c.fps;$('sess').value=c.session_seconds;$('speed').value=c.speed;$('rel').value=c.auto_release_s;$('savepartial').checked=c.save_partial_on_error;$('append').checked=c.append_existing;$('extras').checked=c.extras;
+    }
+  }
+  $('dlgSec').textContent=s.cfg.session_seconds;
+  $('dsMsg').textContent=r.open?`open: ${r.root}  (${r.episodes} episode${r.episodes==1?'':'s'} in it)`:'';
+  // joints
+  const J=s.joints, L=s.leader||{}, F=s.follower||{}, H=s.health||{}, LH=s.leader_health||{};
+  let h='<tr><th>joint</th><th style="width:34%"></th><th>leader</th><th>follower</th><th>err</th><th>load</th><th>cur</th><th>°C F/L</th><th>V</th></tr>';
+  for(const j of J){
+    const g=j==='gripper', lo=g?0:-180, hi=g?100:180;
+    const pct=v=>v==null?0:Math.max(0,Math.min(100,(v-lo)/(hi-lo)*100));
+    const hh=H[j]||{}, lh=LH[j]||{};
+    const fa=(s.engine.active_alerts||{})['follower/'+j]||{}, la=(s.engine.active_alerts||{})['leader/'+j]||{};
+    const lvl=Object.values(fa).concat(Object.values(la));
+    const rowc=lvl.includes('crit')?'crit':lvl.includes('warn')?'warn':'';
+    const cc=k=>fa[k]==='crit'?'cellcrit':fa[k]==='warn'?'cellwarn':'';
+    h+=`<tr class="${rowc}"><td>${j}${fa.collision?' ⚠ COLLISION?':''}</td><td><div class="bar"><i style="left:${pct(L[j])}%"></i><i class="f" style="left:${pct(F[j])}%"></i></div></td>
+      <td>${num(L[j])}</td><td>${num(F[j])}</td><td>${L[j]!=null&&F[j]!=null?num(L[j]-F[j]):'–'}</td>
+      <td class="${cc('load')}">${hh.load??'–'}</td><td class="${cc('current')}">${hh.current??'–'}</td><td class="${cc('temp')||(la.temp==='crit'?'cellcrit':la.temp==='warn'?'cellwarn':'')}">${hh.temp??'–'}/${lh.temp??'–'}</td><td>${hh.voltage!=null?(hh.voltage/10).toFixed(1):'–'}</td></tr>`;
+  }
+  $('joints').innerHTML=h;
+  const al=e.alerts||[];
+  $('alerts').innerHTML=al.length?al.slice().reverse().map(a=>`<div class="${a.level}">${a.time} ${a.text}</div>`).join(''):'<div class="info">no alerts</div>';
+  const act=Object.values(e.active_alerts||{}).flatMap(o=>Object.values(o));
+  const nc=act.filter(x=>x==='crit').length, nw=act.filter(x=>x==='warn').length;
+  const pa=$('pAlert'); pa.style.display=(nc||nw)?'':'none';
+  if(nc) pill(pa,'bad',nc+' CRITICAL'); else if(nw) pill(pa,'warn',nw+' warning'+(nw>1?'s':''));
+  const cm=e.comm||{}; const rr=[['leader',cm.leader],['follower',cm.follower]].filter(([k,v])=>v&&Object.keys(v).length).map(([k,v])=>k+' '+JSON.stringify(v)).join(', ');
+  if(rr) $('engMsg').textContent+=` | serial retries (last 10 s): ${rr}`;
+  if(e.retries) $('engMsg').textContent+=` (total retries: ${e.retries})`;
+}
+async function poll(){
+  try{S=await fetch('/api/status').then(r=>r.json());render()}catch(e){}
+  setTimeout(poll,120);
+}
+poll();
+
+async function saveCfg(){
+  return api('config',{task:$('task').value,dataset_dir:$('dir').value,dataset_name:$('name').value,
+    fps:+$('fps').value,session_seconds:+$('sess').value,speed:+$('speed').value,auto_release_s:+$('rel').value,save_partial_on_error:$('savepartial').checked,append_existing:$('append').checked,extras:$('extras').checked});
+}
+$('bSave').onclick=async()=>{await saveCfg();const r=await api('open_dataset');if(r.ok)toast(r.result)};
+['task','dir','name','fps','sess','speed','rel','savepartial','append','extras'].forEach(id=>$(id).addEventListener('change',saveCfg));
+
+$('bConn').onclick=async()=>{
+  const st=S.engine.state;
+  if(st==='disconnected'||st==='error') await api('connect',{resume_holding:$('resume').checked});
+  else await api('disconnect');
+};
+$('bTele').onclick=()=>$('dlg').showModal();
+$('dlgNo').onclick=()=>$('dlg').close();
+$('dlgGo').onclick=async()=>{$('dlg').close();await saveCfg();await api('teleop_start',{confirmed:true})};
+$('bStop').onclick=()=>api('teleop_stop');
+$('bCams').onclick=async()=>{const r=await api('cameras_restart');if(r.ok)toast(r.result)};
+let logOn=false;
+$('bLog').onclick=async()=>{logOn=!logOn;$('logPanel').style.display=logOn?'':'none';$('bLog').textContent=logOn?'Hide log':'Show log';if(logOn)refreshLog()};
+async function refreshLog(){if(!logOn)return;try{const t=await fetch('/api/log').then(r=>r.text());const p=$('logText');const atEnd=p.scrollTop+p.clientHeight>=p.scrollHeight-20;p.textContent=t;if(atEnd)p.scrollTop=p.scrollHeight}catch(e){}setTimeout(refreshLog,2000)}
+$('bKeep').onclick=()=>api('cancel_release');
+$('bTorque').onclick=()=>$('dlgT').showModal();
+$('dtNo').onclick=()=>$('dlgT').close();
+$('dtGo').onclick=async()=>{$('dlgT').close();await api('disable_torque',{confirmed:true})};
+
+let recBusy=false;
+async function toggleRec(){
+  if(recBusy||S.recorder.saving) return;
+  recBusy=true; setTimeout(()=>recBusy=false,1200);
+  if(S.recorder.recording){const r=await api('record_stop',{save:true});if(r.ok)toast(r.result)}
+  else{await saveCfg();await api('record_start')}
+}
+$('bRec').onclick=()=>{toggleRec();$('bRec').blur()};
+$('bDiscard').onclick=async()=>{const r=await api('record_stop',{save:false});if(r.ok)toast(r.result)};
+document.addEventListener('keyup',ev=>{if(ev.code==='Space'&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName))ev.preventDefault()});
+document.addEventListener('keydown',ev=>{
+  if(['INPUT','TEXTAREA'].includes(document.activeElement.tagName)||document.querySelector('dialog[open]')) return;
+  if(ev.code==='Space'){ev.preventDefault();if(!$('bRec').disabled)toggleRec()}
+  else if(ev.code==='Backspace'){if(!$('bDiscard').disabled){ev.preventDefault();$('bDiscard').click()}}
+  else if(ev.code==='Escape'){if(!$('bStop').disabled)$('bStop').click()}
+});
+</script>
+</body>
+</html>

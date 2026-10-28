@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-10-23T15:55:31.099244+03:00",
+  "role": "so101_leader",
+  "controller_serial": "5B79016829",
+  "joint": "shoulder_pan",
+  "id": 1,
+  "model": [
+    9,
+    3
+  ],
+  "baud_register": 0,
+  "eeprom_lock": 1,
+  "torque_enable": 0
+}

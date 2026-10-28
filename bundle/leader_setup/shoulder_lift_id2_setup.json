@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-10-23T15:52:16.858559+03:00",
+  "role": "so101_leader",
+  "controller_serial": "5B79016829",
+  "joint": "shoulder_lift",
+  "previous_id": 1,
+  "id": 2,
+  "model": [
+    9,
+    3
+  ],
+  "baud_register": 0,
+  "eeprom_lock": 1,
+  "torque_enable": 0
+}

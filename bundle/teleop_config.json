@@ -1,0 +1,8 @@
+{
+  "leader_port": "/dev/serial/by-id/usb-1a86_USB_Single_Serial_5B79016829-if00",
+  "follower_port": "/dev/serial/by-id/usb-1a86_USB_Single_Serial_5B8E114736-if00",
+  "baudrate": 1000000,
+  "speed_counts_per_second": 400,
+  "session_seconds": 60,
+  "note": "Same physical arms and controller serials; calibrate again if motors or mechanics change."
+}

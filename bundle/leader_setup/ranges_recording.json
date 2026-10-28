@@ -1,0 +1,30 @@
+{
+  "samples": 1849,
+  "ranges": {
+    "shoulder_pan": [
+      758,
+      3463
+    ],
+    "shoulder_lift": [
+      912,
+      3256
+    ],
+    "elbow_flex": [
+      815,
+      3082
+    ],
+    "wrist_flex": [
+      902,
+      3177
+    ],
+    "wrist_roll": [
+      59,
+      3866
+    ],
+    "gripper": [
+      2046,
+      3219
+    ]
+  },
+  "finished": true
+}

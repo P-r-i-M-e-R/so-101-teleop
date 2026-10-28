@@ -1,0 +1,5 @@
+# CPU torch is enough for recording:  pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+lerobot[dataset]>=0.6
+opencv-python-headless
+pyserial>=3.5,<4
+pyrealsense2

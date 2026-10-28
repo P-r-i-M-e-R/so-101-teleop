@@ -1,0 +1,80 @@
+{
+  "shoulder_pan": {
+    "id": 1,
+    "old_offset": 0,
+    "samples": [
+      2355,
+      2355,
+      2355,
+      2355,
+      2355
+    ],
+    "homing_offset": 308,
+    "verified_position": 2047
+  },
+  "shoulder_lift": {
+    "id": 2,
+    "old_offset": 0,
+    "samples": [
+      1162,
+      1162,
+      1162,
+      1162,
+      1162
+    ],
+    "homing_offset": -885,
+    "verified_position": 2048
+  },
+  "elbow_flex": {
+    "id": 3,
+    "old_offset": 0,
+    "samples": [
+      3755,
+      3755,
+      3755,
+      3755,
+      3755
+    ],
+    "homing_offset": 1708,
+    "verified_position": 2048
+  },
+  "wrist_flex": {
+    "id": 4,
+    "old_offset": 0,
+    "samples": [
+      170,
+      171,
+      171,
+      171,
+      171
+    ],
+    "homing_offset": -1876,
+    "verified_position": 2048
+  },
+  "wrist_roll": {
+    "id": 5,
+    "old_offset": 0,
+    "samples": [
+      1526,
+      1526,
+      1526,
+      1526,
+      1526
+    ],
+    "homing_offset": -521,
+    "verified_position": 2048
+  },
+  "gripper": {
+    "id": 6,
+    "old_offset": 0,
+    "samples": [
+      3843,
+      3843,
+      3843,
+      3843,
+      3843
+    ],
+    "homing_offset": 1796,
+    "verified_position": 2048
+  }
+}

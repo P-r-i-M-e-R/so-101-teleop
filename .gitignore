@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.py[cod]
+logs/
+alerts.jsonl
+lerobot_datasets/
+datasets/
+*.mp4
+*.parquet

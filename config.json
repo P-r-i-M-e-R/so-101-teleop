@@ -1,0 +1,25 @@
+{
+  "cameras": [
+    {
+      "name": "front",
+      "device": "realsense"
+    },
+    {
+      "name": "wrist",
+      "device": "/dev/v4l/by-id/usb-Sonix_Technology_Co.__Ltd._USB2.0_CAM1_USB2.0_CAM1-video-index0"
+    }
+  ],
+  "width": 640,
+  "height": 480,
+  "camera_fps": 30,
+  "fps": 30,
+  "dataset_dir": "/home/maksimovfs/lerobot_datasets",
+  "dataset_name": "so101_teleop_bag_depth",
+  "task": "pick_place_bag",
+  "session_seconds": 300,
+  "speed": 400,
+  "extras": true,
+  "auto_release_s": 0,
+  "save_partial_on_error": false,
+  "append_existing": true
+}
